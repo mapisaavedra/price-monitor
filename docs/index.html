@@ -2,15 +2,32 @@
 <html lang="es">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="refresh" content="0; url=dashboard.html">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Dashboard de precios</title>
+
+  <!-- Redirección inmediata a dashboard.html -->
+  <meta http-equiv="refresh" content="0; url=dashboard.html">
+
+  <!-- SEO opcional -->
+  <link rel="canonical" href="https://mapisaavedra.github.io/price-monitor/dashboard.html">
+  <meta name="robots" content="index,follow">
+
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#0f1220;color:#e8ecf5;display:grid;place-items:center;height:100vh;margin:0}
+    :root{color-scheme: dark light}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+         background:#0f1220;color:#e8ecf5;margin:0;height:100vh;display:grid;place-items:center}
     a{color:#60a5fa}
+    .card{max-width:720px;padding:16px;border-radius:12px;border:1px solid #26304a;background:#15192b}
   </style>
+  <script>
+    // Redirección JS (por si el meta no corre)
+    window.location.replace("dashboard.html");
+  </script>
 </head>
 <body>
-  Redirigiendo al <a href="dashboard.html">dashboard</a>…
+  <div class="card">
+    Redirigiendo al <a href="dashboard.html">dashboard interactivo</a>…
+  </div>
 </body>
 </html>
+
