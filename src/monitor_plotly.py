@@ -2,7 +2,6 @@ import argparse
 import datetime as dt
 from pathlib import Path
 import csv
-import os
 
 import numpy as np
 import pandas as pd
@@ -50,13 +49,13 @@ def load_history(csv_path):
 
 
 def enrich_with_changes(df: pd.DataFrame):
-    """Agrega % cambio vs. punto anterior para cada columna de precio."""
+    """Agrega % cambio vs. punto anterior y rellena NaN con 0 para funcionar en el primer run."""
     result = df.copy()
     for col in df.columns:
         if col == "timestamp":
             continue
         result[f"{col}_pct"] = result[col].pct_change() * 100.0
-    return result
+    return result.fillna(0.0)
 
 
 def build_dashboard(df: pd.DataFrame, cfg: dict):
@@ -67,18 +66,18 @@ def build_dashboard(df: pd.DataFrame, cfg: dict):
 
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
-    # Series y MAs
+    # Series y medias móviles (si hay muy pocos puntos, Plotly igual pinta)
     for col in df.columns:
         if col == "timestamp" or col.endswith("_pct"):
             continue
         fig.add_trace(
             go.Scatter(
                 x=df["timestamp"], y=df[col], name=col,
-                mode="lines", line=dict(width=2, color=colors.get(col))
+                mode="lines+markers" if len(df) <= 3 else "lines",
+                line=dict(width=2, color=colors.get(col))
             ),
             secondary_y=False
         )
-        # medias móviles
         for w in ma_windows:
             ma = df[col].rolling(w).mean()
             fig.add_trace(
@@ -89,17 +88,17 @@ def build_dashboard(df: pd.DataFrame, cfg: dict):
                 secondary_y=False
             )
 
-    # Volatilidad aproximada (desv. estándar de % cambio)
+    # Δ% promedio como barras (rellenado con 0s en primeros puntos)
     vol_cols = [c for c in df.columns if c.endswith("_pct")]
     if vol_cols:
-        vol = df[vol_cols].mean(axis=1)  # promedio de % cambio instantáneo
+        vol = df[vol_cols].mean(axis=1).fillna(0.0)
         fig.add_trace(
             go.Bar(x=df["timestamp"], y=vol, name="Δ% promedio", opacity=0.25),
             secondary_y=True
         )
 
     fig.update_layout(
-        title="Histórico de precios (con medias móviles) · Δ% promedio como barras",
+        title="Histórico de precios (MA y Δ% promedio)",
         template="plotly_dark",
         plot_bgcolor=bg, paper_bgcolor=bg,
         font=dict(color=fg),
@@ -117,7 +116,7 @@ def build_dashboard(df: pd.DataFrame, cfg: dict):
         if col == "timestamp" or col.endswith("_pct"):
             continue
         pct_col = f"{col}_pct"
-        latest.append([col, f"${last_row[col]:,.2f}", f"{last_row.get(pct_col, np.nan):+.2f}%"])
+        latest.append([col, f"${last_row[col]:,.2f}", f"{last_row.get(pct_col, 0.0):+.2f}%"])
     table = go.Figure(
         data=[go.Table(
             header=dict(values=["Activo", "Último precio", "Δ% vs. anterior"]),
@@ -161,10 +160,9 @@ def notify_telegram(text, cfg):
 
 
 def write_dashboard_html(fig, table, out_html):
-    from plotly.io import write_html
+    from plotly.io import to_html
     Path(out_html).parent.mkdir(parents=True, exist_ok=True)
-    # Combinar gráfico + tabla en una página simple
-    html = f"""
+    body = f"""
 <!doctype html>
 <html lang="es">
 <head>
@@ -183,17 +181,17 @@ def write_dashboard_html(fig, table, out_html):
   <div class="wrap">
     <h1>Dashboard de precios</h1>
     <div class="card">
-      {fig.to_html(include_plotlyjs="cdn", full_html=False)}
+      {to_html(fig, include_plotlyjs="cdn", full_html=False)}
     </div>
     <div class="card" style="margin-top:14px">
-      {table.to_html(include_plotlyjs=False, full_html=False)}
+      {to_html(table, include_plotlyjs=False, full_html=False)}
     </div>
     <footer>Generado automáticamente por GitHub Actions.</footer>
   </div>
 </body>
 </html>
 """
-    Path(out_html).write_text(html, encoding="utf-8")
+    Path(out_html).write_text(body, encoding="utf-8")
 
 
 def main():
@@ -213,8 +211,9 @@ def main():
     append_history(csv_path, now, prices)
 
     df = load_history(csv_path)
-    if df is None or len(df) < 2:
-        print("Histórico insuficiente. Ejecuta de nuevo luego de crear el primer registro.")
+    if df is None or df.empty:
+        # Caso muy raro: no se pudo crear el CSV; salimos con info.
+        print("No hay histórico aún; vuelve a ejecutar.")
         return
 
     df = enrich_with_changes(df)
@@ -228,7 +227,6 @@ def main():
         if cfg.get("telegram"):
             notify_telegram(msg, cfg)
 
-    # salida en consola
     print(f"[{now.isoformat()}Z] " + ", ".join([f"{k}: ${v}" for k, v in prices.items()]))
     if alerts:
         print("ALERTAS:")
