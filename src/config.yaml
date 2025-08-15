@@ -1,0 +1,35 @@
+# Activos (IDs de CoinGecko)
+assets:
+  - id: bitcoin
+    name: BTC
+    color: "#f59e0b"
+    upper: 80000
+    lower: 50000
+  - id: ethereum
+    name: ETH
+    color: "#60a5fa"
+    upper: 5000
+    lower: 2500
+
+source:
+  url: "https://api.coingecko.com/api/v3/simple/price"
+  vs_currency: "usd"
+
+output:
+  history_csv: "data/prices.csv"
+  dashboard_html: "docs/dashboard.html"
+
+chart:
+  ma_windows: [5, 20]     # medias móviles (número de puntos)
+  theme_bg: "#0f1220"
+  theme_fg: "#e8ecf5"
+
+alerts:
+  enabled: true
+  mode: "stdout"          # stdout | file
+  file_path: "docs/alerts.txt"
+
+# Notificaciones opcionales (dejalos vacíos si no quieres usar)
+telegram:
+  bot_token: ""           # ej: 123456:ABC...
+  chat_id: ""             # ej: 987654321
