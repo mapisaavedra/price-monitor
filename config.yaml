@@ -3,7 +3,7 @@ assets:
   - id: bitcoin
     symbol: BTC
     name: Bitcoin
-    color: "#f59e0b"
+    color: "#fbbf24"
     alerts:
       above: 120000
       below: 60000
@@ -11,7 +11,7 @@ assets:
   - id: ethereum
     symbol: ETH
     name: Ethereum
-    color: "#818cf8"
+    color: "#c084fc"
     alerts:
       above: 5000
       below: 1800
@@ -19,7 +19,7 @@ assets:
   - id: solana
     symbol: SOL
     name: Solana
-    color: "#14b8a6"
+    color: "#2dd4bf"
     alerts:
       move_pct_24h: 8
 

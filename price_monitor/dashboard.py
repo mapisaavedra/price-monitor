@@ -31,7 +31,7 @@ def build_payload(w: pd.DataFrame, cfg: Config, alert_history: list[dict],
         "vs_currency": cfg.vs_currency,
         "ma_windows": cfg.ma_windows,
         "assets": [
-            {"symbol": a.symbol, "name": a.name, "color": a.color,
+            {"id": a.id, "symbol": a.symbol, "name": a.name, "color": a.color,
              "alerts": {k: v for k, v in vars(a.alerts).items() if v is not None}}
             for a in cfg.assets if a.symbol in series
         ],

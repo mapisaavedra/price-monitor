@@ -17,7 +17,12 @@ Pipeline de datos **serverless** que monitorea precios de criptomonedas cada hor
 - **Almacenamiento versionado** en CSV formato largo (`timestamp, asset, price`), deduplicado por hora y commiteado por el bot: el historial de git es el historial de precios.
 - **Analítica**: variación 24h/7d/30d, medias móviles, volatilidad anualizada, *max drawdown* y matriz de correlación de retornos.
 - **Alertas** por umbral de precio y por movimiento brusco en 24h, con *cooldown* persistente para no repetir notificaciones.
-- **Dashboard estático** (HTML + Plotly.js) que lee `data.json`: KPIs con sparklines, rangos 24h–90d, comparación de rendimiento, modo claro/oscuro y diseño responsive.
+- **Dashboard interactivo** (HTML + Plotly.js) que lee `data.json`:
+  - Precio **en vivo** cada 60 s directamente desde el navegador, con animación al cambiar.
+  - **Simulador** "¿y si hubiera invertido?": monto, activo y fecha (o clic en el gráfico).
+  - Zoom arrastrando, rangos 24h–90d, comparación de rendimiento, marcadores de máximo y mínimo.
+  - Tabla de métricas ordenable, heatmap de correlación clicable, atajos de teclado (`1`–`3`, `T`).
+  - Tema claro/oscuro con selector manual y diseño responsive.
 
 ## Arquitectura
 
@@ -76,6 +81,20 @@ Edita `config.yaml` para agregar activos (cualquier ID de CoinGecko) y reglas de
 |---|---|
 | `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` | Notificaciones de alertas |
 | `COINGECKO_API_KEY` | API key demo gratuita para más cuota |
+
+## Precisión de los datos
+
+| Dato | Frecuencia | Fuente |
+|---|---|---|
+| Precio en las tarjetas | cada 60 s (navegador) | CoinGecko `/simple/price` |
+| Histórico y métricas | cada hora (GitHub Actions) | CoinGecko `/market_chart` |
+
+- CoinGecko publica un **promedio ponderado por volumen de cientos de exchanges**, así que puede diferir ±0.1–0.5% del precio de un exchange concreto.
+- En el plan gratuito, CoinGecko cachea las respuestas ~1–5 minutos.
+- El cron de GitHub Actions no es exacto: puede retrasarse de 5 a 30 min en horas de carga.
+- Las métricas usan cierres horarios: no capturan picos intra-hora.
+
+Es apto para seguimiento y análisis, **no para trading de alta frecuencia**.
 
 ## Decisiones de diseño
 

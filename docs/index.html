@@ -4,41 +4,58 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Price Monitor · Dashboard cripto</title>
-<meta name="description" content="Monitor de precios cripto con histórico, métricas de riesgo y alertas, actualizado cada hora con GitHub Actions.">
+<meta name="description" content="Monitor de precios cripto con histórico, métricas de riesgo, simulador y alertas, actualizado cada hora con GitHub Actions.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
 <style>
 :root{
-  --bg:#0b0d14; --panel:#12151f; --panel2:#171b27; --line:#232838;
-  --fg:#e7eaf2; --muted:#8a91a6; --up:#22c55e; --down:#ef4444; --accent:#818cf8;
-  --radius:14px; --mono:'JetBrains Mono',ui-monospace,monospace;
+  --bg:#120f1d; --panel:#1b1729; --panel2:#241f36; --line:#2f2945;
+  --fg:#f3eefe; --muted:#a39bbd; --up:#5eead4; --down:#fb7185; --accent:#f472b6; --accent2:#a78bfa;
+  --glow:0 0 0 1px var(--line), 0 12px 32px -12px rgba(244,114,182,.25);
+  --radius:16px; --mono:'JetBrains Mono',ui-monospace,monospace;
 }
-@media (prefers-color-scheme: light){:root{
-  --bg:#f6f7fb; --panel:#fff; --panel2:#f1f3f8; --line:#e3e6ee;
-  --fg:#141824; --muted:#5f677c; --up:#16a34a; --down:#dc2626; --accent:#4f46e5;
+:root[data-theme="light"]{
+  --bg:#fdf7fb; --panel:#ffffff; --panel2:#f7eff6; --line:#eedfea;
+  --fg:#2a1f33; --muted:#7c6b86; --up:#0d9488; --down:#e11d48; --accent:#db2777; --accent2:#7c3aed;
+  --glow:0 0 0 1px var(--line), 0 12px 32px -14px rgba(219,39,119,.22);
+}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){
+  --bg:#fdf7fb; --panel:#ffffff; --panel2:#f7eff6; --line:#eedfea;
+  --fg:#2a1f33; --muted:#7c6b86; --up:#0d9488; --down:#e11d48; --accent:#db2777; --accent2:#7c3aed;
+  --glow:0 0 0 1px var(--line), 0 12px 32px -14px rgba(219,39,119,.22);
 }}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(800px 400px at 10% -10%, color-mix(in srgb,var(--accent) 14%,transparent), transparent),
+                   radial-gradient(700px 400px at 100% 0%, color-mix(in srgb,var(--accent2) 12%,transparent), transparent);
+  background-attachment:fixed}
 .wrap{max-width:1180px;margin:0 auto;padding:28px 16px 48px}
 header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:24px}
-h1{font-size:1.6rem;margin:0;letter-spacing:-.02em}
-h1 span{color:var(--accent)}
+h1{font-size:1.7rem;margin:0;letter-spacing:-.02em}
+h1 span{background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
 .sub{color:var(--muted);font-size:.9rem;margin-top:4px}
-.live{display:inline-flex;align-items:center;gap:8px;font-size:.82rem;color:var(--muted);
+.hdr-r{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:8px;font-size:.8rem;color:var(--muted);
   background:var(--panel);border:1px solid var(--line);padding:6px 12px;border-radius:999px}
+button.pill{cursor:pointer;font:inherit;font-size:.8rem}
+button.pill:hover{color:var(--fg);border-color:var(--accent)}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--up);box-shadow:0 0 0 0 var(--up);animation:pulse 2s infinite}
-.dot.stale{background:#f59e0b;animation:none}
+.dot.stale{background:#fbbf24;animation:none}.dot.off{background:var(--muted);animation:none}
 @keyframes pulse{70%{box-shadow:0 0 0 8px transparent}}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-bottom:14px}
 .kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;cursor:pointer;
-  transition:border-color .15s, transform .15s;position:relative;overflow:hidden}
-.kpi:hover{transform:translateY(-2px)}
-.kpi.active{border-color:var(--c)}
-.kpi::before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:var(--c)}
-.kpi .top{display:flex;justify-content:space-between;align-items:center}
+  transition:transform .2s, box-shadow .2s, border-color .2s;position:relative;overflow:hidden}
+.kpi:hover{transform:translateY(-3px);box-shadow:0 14px 30px -14px var(--c)}
+.kpi.active{border-color:var(--c);box-shadow:0 0 0 1px var(--c), 0 14px 30px -16px var(--c)}
+.kpi::after{content:"";position:absolute;inset:auto -30% -60% auto;width:160px;height:160px;border-radius:50%;
+  background:radial-gradient(var(--c),transparent 70%);opacity:.12;pointer-events:none}
 .sym{font-weight:700}.nm{color:var(--muted);font-size:.85rem;margin-left:6px}
-.price{font:600 1.5rem var(--mono);margin:6px 0 2px;letter-spacing:-.02em}
+.badge{float:right;font-size:.68rem;font-weight:600;padding:2px 8px;border-radius:999px;color:var(--c);
+  background:color-mix(in srgb,var(--c) 15%,transparent)}
+.price{font:600 1.5rem var(--mono);margin:6px 0 2px;letter-spacing:-.02em;border-radius:6px;transition:background .8s}
+.price.flash-up{background:color-mix(in srgb,var(--up) 25%,transparent);transition:none}
+.price.flash-down{background:color-mix(in srgb,var(--down) 25%,transparent);transition:none}
 .chg{display:flex;gap:12px;font:500 .82rem var(--mono)}
 .up{color:var(--up)}.down{color:var(--down)}.na{color:var(--muted)}
 .spark{height:44px;margin-top:8px}
@@ -47,33 +64,54 @@ h1 span{color:var(--accent)}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:14px;min-width:0}
 .card h2{font-size:.95rem;margin:0;font-weight:600}
 .card .hd{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.hint{color:var(--muted);font-size:.76rem}
 .seg{display:inline-flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:3px}
-.seg button{all:unset;cursor:pointer;padding:4px 10px;border-radius:7px;font-size:.8rem;color:var(--muted)}
-.seg button.on{background:var(--panel);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.2)}
-.chart{height:380px}.chart.sm{height:280px}
+.seg button{all:unset;cursor:pointer;padding:4px 10px;border-radius:7px;font-size:.8rem;color:var(--muted);transition:color .15s}
+.seg button:hover{color:var(--fg)}
+.seg button.on{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.chart{height:400px}.chart.sm{height:280px}
 table{width:100%;border-collapse:collapse;font-size:.85rem}
 th,td{padding:8px 6px;text-align:right;border-bottom:1px solid var(--line)}
 th:first-child,td:first-child{text-align:left}
-th{color:var(--muted);font-weight:500;font-size:.78rem}
+th{color:var(--muted);font-weight:500;font-size:.78rem;cursor:pointer;user-select:none}
+th:hover{color:var(--fg)}
+th.sorted::after{content:" ▾"}th.sorted.asc::after{content:" ▴"}
+tbody tr{cursor:pointer;transition:background .15s}
+tbody tr:hover{background:var(--panel2)}
 td{font-family:var(--mono);white-space:nowrap}
 .alerts{list-style:none;margin:0;padding:0;max-height:280px;overflow:auto}
 .alerts li{padding:10px 0;border-bottom:1px solid var(--line);font-size:.86rem}
 .alerts time{display:block;color:var(--muted);font-size:.75rem;font-family:var(--mono)}
 .empty{color:var(--muted);font-size:.88rem;padding:20px 0;text-align:center}
 .scroll{overflow-x:auto}
+/* simulador */
+.sim{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:center}
+@media(max-width:700px){.sim{grid-template-columns:1fr}}
+.sim label{display:block;font-size:.78rem;color:var(--muted);margin:10px 0 4px}
+.sim input,.sim select{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--fg);
+  border-radius:10px;padding:9px 11px;font:500 .95rem var(--mono);outline:none}
+.sim input:focus,.sim select:focus{border-color:var(--accent)}
+input[type=range]{padding:0;accent-color:var(--accent);background:transparent;border:0}
+.res{background:var(--panel2);border-radius:14px;padding:18px;text-align:center}
+.res .big{font:700 2rem var(--mono);letter-spacing:-.03em;margin:4px 0}
+.res .small{color:var(--muted);font-size:.82rem}
 footer{color:var(--muted);font-size:.8rem;margin-top:24px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
 footer a{color:var(--accent)}
 #state{padding:60px 0;text-align:center;color:var(--muted)}
+kbd{font:500 .7rem var(--mono);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px;background:var(--panel2)}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <div>
-      <h1>Price <span>Monitor</span></h1>
+      <h1>Price <span>Monitor</span> ✨</h1>
       <div class="sub">Precios cripto · histórico horario · métricas de riesgo · alertas</div>
     </div>
-    <div class="live"><i class="dot" id="dot"></i><span id="updated">Cargando…</span></div>
+    <div class="hdr-r">
+      <span class="pill" title="Precio en vivo consultado desde tu navegador cada 60 s"><i class="dot" id="dot"></i><span id="updated">Cargando…</span></span>
+      <button class="pill" id="theme" title="Cambiar tema (T)">🌓</button>
+    </div>
   </header>
 
   <div id="state">Cargando datos…</div>
@@ -82,7 +120,7 @@ footer a{color:var(--accent)}
 
     <div class="card">
       <div class="hd">
-        <h2 id="main-title">Precio</h2>
+        <div><h2 id="main-title">Precio</h2><div class="hint">Arrastra para hacer zoom · doble clic para resetear · clic en un punto para usarlo en el simulador · teclas <kbd>1</kbd>–<kbd>3</kbd> cambian de activo</div></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <div class="seg" id="range"></div>
           <div class="seg" id="mode"><button data-v="price" class="on">Precio</button><button data-v="perf">Rendimiento %</button></div>
@@ -91,9 +129,28 @@ footer a{color:var(--accent)}
       <div class="chart" id="main"></div>
     </div>
 
+    <div class="card">
+      <div class="hd"><h2>💸 ¿Y si hubiera invertido…?</h2><span class="hint">Simulación con el histórico real, sin comisiones</span></div>
+      <div class="sim">
+        <div>
+          <label for="amt">Monto (USD)</label>
+          <input id="amt" type="number" min="1" value="100">
+          <label for="sasset">Activo</label>
+          <select id="sasset"></select>
+          <label for="days">Hace <b id="days-lbl">30</b> días</label>
+          <input id="days" type="range" min="1" max="90" value="30">
+        </div>
+        <div class="res">
+          <div class="small" id="r-from">—</div>
+          <div class="big" id="r-val">—</div>
+          <div class="small" id="r-pnl">—</div>
+        </div>
+      </div>
+    </div>
+
     <div class="grid">
       <div class="card">
-        <div class="hd"><h2>Métricas de riesgo</h2></div>
+        <div class="hd"><h2>Métricas de riesgo</h2><span class="hint">Clic en columna para ordenar</span></div>
         <div class="scroll"><table id="metrics"></table></div>
       </div>
       <div class="card">
@@ -109,7 +166,7 @@ footer a{color:var(--accent)}
   </main>
 
   <footer>
-    <span>Datos: CoinGecko · Actualización automática cada hora con GitHub Actions</span>
+    <span>Datos: CoinGecko · Histórico cada hora con GitHub Actions · Precio en vivo cada 60 s</span>
     <a href="https://github.com/mapisaavedra/price-monitor">Código en GitHub →</a>
   </footer>
 </div>
@@ -117,100 +174,164 @@ footer a{color:var(--accent)}
 <script>
 const $ = s => document.querySelector(s);
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
-const fmtUSD = v => v == null ? '—' : '$' + v.toLocaleString('en-US', {maximumFractionDigits: v < 10 ? 4 : 2});
+const fmtUSD = (v, d) => v == null ? '—' : '$' + v.toLocaleString('en-US', {minimumFractionDigits: d ?? (v < 10 ? 4 : 2), maximumFractionDigits: d ?? (v < 10 ? 4 : 2)});
 const fmtPct = v => v == null ? '—' : (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
 const cls = v => v == null ? 'na' : v >= 0 ? 'up' : 'down';
 const RANGES = {'24h':1,'7d':7,'30d':30,'90d':90,'Todo':null};
-let D, sel, range = '30d', mode = 'price';
+const LIVE_MS = 60000;
+let D, sel, range = '30d', mode = 'price', sortKey = null, sortAsc = false, live = {};
 
+/* ---------- tema ---------- */
+function setTheme(t) {
+  if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme;
+  try { t ? localStorage.setItem('pm-theme', t) : localStorage.removeItem('pm-theme'); } catch {}
+  if (D) renderAll();
+}
+try { const t = localStorage.getItem('pm-theme'); if (t) document.documentElement.dataset.theme = t; } catch {}
+const isDark = () => (document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')) === 'dark';
+$('#theme').onclick = () => setTheme(isDark() ? 'light' : 'dark');
+
+/* ---------- plotly helpers ---------- */
 function layout(extra = {}) {
   return Object.assign({
     paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)',
-    font:{family:'Inter', color:css('--muted'), size:12},
-    margin:{l:56,r:16,t:8,b:36}, hovermode:'x unified',
-    xaxis:{gridcolor:css('--line'), linecolor:css('--line')},
+    font:{family:'Inter, system-ui, sans-serif', color:css('--muted'), size:12},
+    margin:{l:56,r:16,t:8,b:36}, hovermode:'x unified', dragmode:'zoom',
+    xaxis:{gridcolor:css('--line'), linecolor:css('--line'), showspikes:true, spikemode:'across', spikethickness:1, spikecolor:css('--muted'), spikedash:'dot'},
     yaxis:{gridcolor:css('--line'), zeroline:false},
     legend:{orientation:'h', y:1.08, x:0},
-    hoverlabel:{bgcolor:css('--panel2'), bordercolor:css('--line'), font:{color:css('--fg'), family:'JetBrains Mono, ui-monospace, monospace'}},
+    hoverlabel:{bgcolor:css('--panel2'), bordercolor:css('--accent'), font:{color:css('--fg'), family:'JetBrains Mono, ui-monospace, monospace'}},
   }, extra);
 }
-const cfg = {displayModeBar:false, responsive:true};
+const cfg = {displayModeBar:false, responsive:true, doubleClick:'reset'};
+const asset = s => D.assets.find(a => a.symbol === s);
+const lastPrice = s => live[s]?.price ?? D.summary[s].price;
 
-function cut(series) {
-  const days = RANGES[range];
+function cut(series, days = RANGES[range]) {
   if (!days) return series.t.map((_, i) => i);
-  const end = new Date(series.t[series.t.length-1]).getTime() - days*864e5;
-  return series.t.map((t, i) => i).filter(i => new Date(series.t[i]).getTime() >= end);
+  const end = new Date(series.t.at(-1)).getTime() - days*864e5;
+  return series.t.map((_, i) => i).filter(i => new Date(series.t[i]).getTime() >= end);
 }
 
+/* ---------- KPIs ---------- */
 function renderKPIs() {
-  $('#kpis').innerHTML = D.assets.map(a => {
-    const m = D.summary[a.symbol];
-    return `<div class="kpi ${a.symbol===sel?'active':''}" style="--c:${a.color}" data-s="${a.symbol}">
-      <div class="top"><div><span class="sym">${a.symbol}</span><span class="nm">${a.name}</span></div></div>
-      <div class="price">${fmtUSD(m.price)}</div>
-      <div class="chg"><span class="${cls(m.change_24h)}">24h ${fmtPct(m.change_24h)}</span>
+  $('#kpis').innerHTML = D.assets.map((a, k) => {
+    const m = D.summary[a.symbol], lv = live[a.symbol];
+    const c24 = lv?.change24 ?? m.change_24h;
+    return `<div class="kpi ${a.symbol===sel?'active':''}" style="--c:${a.color}" data-s="${a.symbol}" title="Tecla ${k+1}">
+      <span class="badge">${lv ? '● en vivo' : 'horario'}</span>
+      <div><span class="sym">${a.symbol}</span><span class="nm">${a.name}</span></div>
+      <div class="price" id="pr-${a.symbol}">${fmtUSD(lastPrice(a.symbol))}</div>
+      <div class="chg"><span id="c24-${a.symbol}" class="${cls(c24)}">24h ${fmtPct(c24)}</span>
         <span class="${cls(m.change_7d)}">7d ${fmtPct(m.change_7d)}</span></div>
       <div class="spark" id="sp-${a.symbol}"></div></div>`;
   }).join('');
   D.assets.forEach(a => {
-    const s = D.series[a.symbol], n = Math.min(s.p.length, 168);
-    Plotly.newPlot('sp-'+a.symbol, [{x:s.t.slice(-n), y:s.p.slice(-n), mode:'lines',
-      line:{color:a.color, width:1.6}, fill:'tozeroy', fillcolor:a.color+'18', hoverinfo:'skip'}],
+    const s = D.series[a.symbol], n = Math.min(s.p.length, 168), ys = s.p.slice(-n);
+    Plotly.newPlot('sp-'+a.symbol, [{x:s.t.slice(-n), y:ys, mode:'lines', line:{color:a.color, width:1.8, shape:'spline'},
+      fill:'tozeroy', fillcolor:a.color+'22', hoverinfo:'skip'}],
       {paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)', margin:{l:0,r:0,t:0,b:0},
-       xaxis:{visible:false}, yaxis:{visible:false, range:[Math.min(...s.p.slice(-n))*0.995, Math.max(...s.p.slice(-n))*1.005]},
-       showlegend:false}, {staticPlot:true, responsive:true});
+       xaxis:{visible:false}, yaxis:{visible:false, range:[Math.min(...ys)*0.995, Math.max(...ys)*1.005]}, showlegend:false},
+      {staticPlot:true, responsive:true});
   });
-  document.querySelectorAll('.kpi').forEach(el => el.onclick = () => {
-    sel = el.dataset.s; mode = 'price'; syncSeg('#mode', mode); renderKPIs(); renderMain();
-  });
+  document.querySelectorAll('.kpi').forEach(el => el.onclick = () => select(el.dataset.s));
 }
 
+function select(sym) {
+  sel = sym; mode = 'price'; syncSeg('#mode', mode);
+  document.querySelectorAll('.kpi').forEach(el => el.classList.toggle('active', el.dataset.s === sym));
+  $('#sasset').value = sym; renderMain(); renderSim();
+}
+
+/* ---------- gráfico principal ---------- */
 function renderMain() {
-  let traces = [];
+  const traces = [];
   if (mode === 'price') {
-    const a = D.assets.find(x => x.symbol === sel), s = D.series[sel], idx = cut(s);
+    const a = asset(sel), s = D.series[sel], idx = cut(s), xs = idx.map(i => s.t[i]), ys = idx.map(i => s.p[i]);
     $('#main-title').textContent = `${a.name} (${a.symbol}) · USD`;
-    traces.push({x:idx.map(i=>s.t[i]), y:idx.map(i=>s.p[i]), name:a.symbol, mode:'lines',
-      line:{color:a.color, width:2}, hovertemplate:'%{y:$,.2f}<extra>'+a.symbol+'</extra>'});
-    const dashes = ['dot','dash'];
-    D.ma_windows.forEach((w, k) => traces.push({x:idx.map(i=>s.t[i]), y:idx.map(i=>s.ma[w][i]),
-      name:`MA ${w>=24? (w/24)+'d' : w+'h'}`, mode:'lines',
-      line:{color:css('--muted'), width:1.2, dash:dashes[k%2]}, hovertemplate:'%{y:$,.2f}<extra>MA</extra>'}));
-    const al = a.alerts, shapes = [];
+    traces.push({x:xs, y:ys, name:a.symbol, mode:'lines', line:{color:a.color, width:2.2},
+      fill:'tozeroy', fillcolor:a.color+'14', hovertemplate:'%{y:$,.2f}<extra>'+a.symbol+'</extra>'});
+    ['dot','dash'].forEach((dash, k) => { const w = D.ma_windows[k]; if (w == null) return;
+      traces.push({x:xs, y:idx.map(i => s.ma[w][i]), name:`MA ${w>=24 ? (w/24)+'d' : w+'h'}`, mode:'lines',
+        line:{color: k ? css('--accent2') : css('--muted'), width:1.3, dash}, hovertemplate:'%{y:$,.2f}<extra>MA</extra>'}); });
+    // máximos y mínimos del rango
+    const hi = ys.indexOf(Math.max(...ys)), lo = ys.indexOf(Math.min(...ys));
+    traces.push({x:[xs[hi], xs[lo]], y:[ys[hi], ys[lo]], mode:'markers+text', showlegend:false, hoverinfo:'skip',
+      marker:{size:9, color:[css('--up'), css('--down')], line:{color:css('--panel'), width:2}},
+      text:['máx','mín'], textposition:['top center','bottom center'], textfont:{size:10, color:css('--muted')}});
+    const shapes = [], al = a.alerts;
     for (const [k, c] of [['above', css('--up')], ['below', css('--down')]]) if (al[k] != null)
       shapes.push({type:'line', xref:'paper', x0:0, x1:1, y0:al[k], y1:al[k], line:{color:c, width:1, dash:'dot'}});
-    Plotly.react('main', traces, layout({shapes, yaxis:{gridcolor:css('--line'), tickprefix:'$', separatethousands:true}}), cfg);
+    const lo_ = Math.min(...ys), hi_ = Math.max(...ys), pad = (hi_-lo_)*0.08;
+    Plotly.react('main', traces, layout({shapes,
+      yaxis:{gridcolor:css('--line'), tickprefix:'$', separatethousands:true, range:[lo_-pad, hi_+pad]}}), cfg);
   } else {
     $('#main-title').textContent = 'Rendimiento comparado (%)';
     D.assets.forEach(a => {
       const s = D.series[a.symbol], idx = cut(s), base = s.p[idx[0]];
       traces.push({x:idx.map(i=>s.t[i]), y:idx.map(i=>(s.p[i]/base-1)*100), name:a.symbol, mode:'lines',
-        line:{color:a.color, width:2}, hovertemplate:'%{y:+.2f}%<extra>'+a.symbol+'</extra>'});
+        line:{color:a.color, width:2.2}, hovertemplate:'%{y:+.2f}%<extra>'+a.symbol+'</extra>'});
     });
-    Plotly.react('main', traces, layout({yaxis:{gridcolor:css('--line'), ticksuffix:'%', zeroline:true, zerolinecolor:css('--line')}}), cfg);
+    Plotly.react('main', traces, layout({yaxis:{gridcolor:css('--line'), ticksuffix:'%', zeroline:true, zerolinecolor:css('--muted')}}), cfg);
   }
+  const el = $('#main');
+  el.removeAllListeners?.('plotly_click');
+  el.on('plotly_click', ev => {
+    const t = new Date(ev.points[0].x + (ev.points[0].x.endsWith('Z') ? '' : 'Z'));
+    const days = Math.max(1, Math.min(90, Math.round((Date.now() - t) / 864e5)));
+    $('#days').value = days; if (mode === 'perf') $('#sasset').value = ev.points[0].data.name;
+    renderSim(); $('#sasset').closest('.card').scrollIntoView({behavior:'smooth', block:'center'});
+  });
 }
 
+/* ---------- simulador ---------- */
+function renderSim() {
+  const sym = $('#sasset').value, s = D.series[sym], days = +$('#days').value, amt = Math.max(0, +$('#amt').value || 0);
+  $('#days-lbl').textContent = days;
+  const idx = cut(s, days), p0 = s.p[idx[0]], p1 = lastPrice(sym);
+  const val = amt * p1 / p0, pnl = val - amt, pct = (p1/p0 - 1) * 100;
+  $('#r-from').textContent = `${fmtUSD(amt)} en ${sym} el ${new Date(s.t[idx[0]]).toLocaleDateString('es-PE', {day:'numeric', month:'short'})} a ${fmtUSD(p0)}`;
+  $('#r-val').textContent = fmtUSD(val, 2);
+  $('#r-val').className = 'big ' + cls(pnl);
+  $('#r-pnl').innerHTML = `<span class="${cls(pnl)}">${pnl >= 0 ? '+' : '−'}${fmtUSD(Math.abs(pnl), 2)} (${fmtPct(pct)})</span> ${pnl >= 0 ? '🎉' : '🥲'}`;
+}
+
+/* ---------- métricas ---------- */
+const COLS = [['symbol','Activo'],['change_30d','30d'],['high_30d','Máx 30d'],['low_30d','Mín 30d'],
+  ['volatility_30d','Volatilidad','Desviación estándar de retornos horarios, anualizada'],
+  ['max_drawdown','Máx caída','Mayor caída desde un máximo en todo el histórico']];
 function renderMetrics() {
-  const rows = D.assets.map(a => { const m = D.summary[a.symbol];
-    return `<tr><td><b style="color:${a.color}">●</b> ${a.symbol}</td>
+  let list = D.assets.map(a => ({...D.summary[a.symbol], symbol:a.symbol, color:a.color}));
+  if (sortKey) list.sort((x, y) => ((x[sortKey] ?? -Infinity) > (y[sortKey] ?? -Infinity) ? 1 : -1) * (sortAsc ? 1 : -1));
+  $('#metrics').innerHTML = `<thead><tr>${COLS.map(([k, l, t]) =>
+      `<th data-k="${k}" ${t ? `title="${t}"` : ''} class="${sortKey===k ? 'sorted' + (sortAsc ? ' asc' : '') : ''}">${l}</th>`).join('')}</tr></thead>
+    <tbody>${list.map(m => `<tr data-s="${m.symbol}"><td><b style="color:${m.color}">●</b> ${m.symbol}</td>
       <td class="${cls(m.change_30d)}">${fmtPct(m.change_30d)}</td>
       <td>${fmtUSD(m.high_30d)}</td><td>${fmtUSD(m.low_30d)}</td>
       <td>${m.volatility_30d==null?'—':m.volatility_30d.toFixed(1)+'%'}</td>
-      <td class="down">${fmtPct(m.max_drawdown)}</td></tr>`; }).join('');
-  $('#metrics').innerHTML = `<thead><tr><th>Activo</th><th>30d</th><th>Máx 30d</th><th>Mín 30d</th>
-    <th title="Desviación estándar de retornos horarios, anualizada">Volatilidad</th><th title="Mayor caída desde un máximo en todo el histórico">Máx caída</th></tr></thead><tbody>${rows}</tbody>`;
+      <td class="down">${fmtPct(m.max_drawdown)}</td></tr>`).join('')}</tbody>`;
+  document.querySelectorAll('#metrics th').forEach(th => th.onclick = () => {
+    sortAsc = sortKey === th.dataset.k ? !sortAsc : false; sortKey = th.dataset.k; renderMetrics(); });
+  document.querySelectorAll('#metrics tbody tr').forEach(tr => tr.onclick = () => {
+    select(tr.dataset.s); $('#main').scrollIntoView({behavior:'smooth', block:'center'}); });
 }
 
+/* ---------- correlación ---------- */
 function renderCorr() {
   const c = D.correlation;
   if (!c.matrix.length) { $('#corr').innerHTML = '<div class="empty">Se necesitan más datos</div>'; return; }
   Plotly.newPlot('corr', [{z:c.matrix, x:c.assets, y:c.assets, type:'heatmap', zmin:-1, zmax:1,
-    colorscale:[[0,css('--down')],[.5,css('--panel2')],[1,css('--accent')]], showscale:false,
-    text:c.matrix.map(r=>r.map(v=>v.toFixed(2))), texttemplate:'%{text}', textfont:{family:'JetBrains Mono, ui-monospace, monospace', color:css('--fg')},
-    hovertemplate:'%{y} / %{x}: %{z:.2f}<extra></extra>'}],
-    layout({margin:{l:44,r:8,t:8,b:30}, xaxis:{}, yaxis:{autorange:'reversed'}}), cfg);
+    colorscale:[[0,css('--down')],[.5,css('--panel2')],[1,css('--accent')]], showscale:false, xgap:3, ygap:3,
+    text:c.matrix.map(r=>r.map(v=>v.toFixed(2))), texttemplate:'%{text}',
+    textfont:{family:'JetBrains Mono, ui-monospace, monospace', color:css('--fg')},
+    hovertemplate:'%{y} vs %{x}: %{z:.2f}<extra></extra>'}],
+    layout({margin:{l:44,r:8,t:8,b:30}, hovermode:'closest', xaxis:{}, yaxis:{autorange:'reversed'}}), cfg);
+  $('#corr').on('plotly_click', ev => {
+    const p = ev.points[0]; if (p.x === p.y) return select(p.x);
+    mode = 'perf'; syncSeg('#mode', mode); renderMain();
+    Plotly.restyle('main', {visible: D.assets.map(a => [p.x, p.y].includes(a.symbol) ? true : 'legendonly')});
+    $('#main').scrollIntoView({behavior:'smooth', block:'center'});
+  });
 }
 
 function renderAlerts() {
@@ -220,25 +341,64 @@ function renderAlerts() {
 }
 
 function syncSeg(id, v) { document.querySelectorAll(id+' button').forEach(b => b.classList.toggle('on', b.dataset.v === v)); }
+function renderAll() { renderKPIs(); renderMain(); renderSim(); renderMetrics(); renderCorr(); renderAlerts(); }
 
+/* ---------- precio en vivo (desde el navegador) ---------- */
+async function pollLive() {
+  try {
+    const ids = D.assets.map(a => a.id).join(',');
+    const r = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=${D.vs_currency}&include_24hr_change=true`);
+    if (!r.ok) throw new Error(r.status);
+    const j = await r.json();
+    D.assets.forEach(a => {
+      const q = j[a.id]; if (!q) return;
+      const prev = lastPrice(a.symbol), now = q[D.vs_currency];
+      live[a.symbol] = {price: now, change24: q[D.vs_currency + '_24h_change']};
+      const ce = $('#c24-' + a.symbol), c = live[a.symbol].change24;
+      if (ce && c != null) { ce.textContent = '24h ' + fmtPct(c); ce.className = cls(c); }
+      const el = $('#pr-' + a.symbol);
+      if (el) { el.textContent = fmtUSD(now);
+        if (now !== prev) { el.classList.remove('flash-up','flash-down'); void el.offsetWidth;
+          el.classList.add(now > prev ? 'flash-up' : 'flash-down'); setTimeout(() => el.classList.remove('flash-up','flash-down'), 50); } }
+    });
+    $('#dot').className = 'dot';
+    $('#updated').textContent = 'En vivo · ' + new Date().toLocaleTimeString('es-PE', {hour:'2-digit', minute:'2-digit'});
+    document.querySelectorAll('.badge').forEach(b => b.textContent = '● en vivo');
+    renderSim();
+  } catch {
+    // sin conexión o límite de la API: seguimos con el dato horario
+  }
+}
+
+/* ---------- init ---------- */
 async function init() {
   try {
     const r = await fetch('data.json?_=' + Date.now());
     if (!r.ok) throw new Error(r.status);
     D = await r.json();
-  } catch (e) {
+  } catch {
     $('#state').textContent = 'Aún no hay datos. El primer run de GitHub Actions generará data.json.';
     return;
   }
-  const gen = new Date(D.generated), ageMin = (Date.now() - gen) / 6e4;
-  $('#updated').textContent = 'Actualizado ' + gen.toLocaleString('es-PE', {dateStyle:'medium', timeStyle:'short'});
-  if (ageMin > 180) $('#dot').classList.add('stale');
+  const gen = new Date(D.generated);
+  $('#updated').textContent = 'Histórico ' + gen.toLocaleString('es-PE', {dateStyle:'medium', timeStyle:'short'});
+  if ((Date.now() - gen) / 6e4 > 180) $('#dot').classList.add('stale');
   sel = D.assets[0].symbol;
+  $('#sasset').innerHTML = D.assets.map(a => `<option value="${a.symbol}">${a.symbol} · ${a.name}</option>`).join('');
+  const maxDays = Math.max(1, Math.floor((new Date(D.series[sel].t.at(-1)) - new Date(D.series[sel].t[0])) / 864e5));
+  $('#days').max = maxDays; $('#days').value = Math.min(30, maxDays);
   $('#range').innerHTML = Object.keys(RANGES).map(k => `<button data-v="${k}" class="${k===range?'on':''}">${k}</button>`).join('');
   $('#range').onclick = e => { if (e.target.dataset.v) { range = e.target.dataset.v; syncSeg('#range', range); renderMain(); } };
   $('#mode').onclick = e => { if (e.target.dataset.v) { mode = e.target.dataset.v; syncSeg('#mode', mode); renderMain(); } };
+  ['#amt','#days','#sasset'].forEach(s => $(s).oninput = renderSim);
+  document.addEventListener('keydown', e => {
+    if (e.target.matches('input,select')) return;
+    const n = +e.key; if (n >= 1 && n <= D.assets.length) select(D.assets[n-1].symbol);
+    if (e.key === 't' || e.key === 'T') $('#theme').click();
+  });
   $('#state').hidden = true; $('#app').hidden = false;
-  renderKPIs(); renderMain(); renderMetrics(); renderCorr(); renderAlerts();
+  renderAll();
+  pollLive(); setInterval(() => { if (!document.hidden) pollLive(); }, LIVE_MS);
 }
 init();
 </script>
