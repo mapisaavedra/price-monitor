@@ -1,0 +1,41 @@
+# Activos a monitorear (IDs de CoinGecko: https://api.coingecko.com/api/v3/coins/list)
+assets:
+  - id: bitcoin
+    symbol: BTC
+    name: Bitcoin
+    color: "#f59e0b"
+    alerts:
+      above: 120000
+      below: 60000
+      move_pct_24h: 5        # alerta si se mueve ±5% en 24h
+  - id: ethereum
+    symbol: ETH
+    name: Ethereum
+    color: "#818cf8"
+    alerts:
+      above: 5000
+      below: 1800
+      move_pct_24h: 7
+  - id: solana
+    symbol: SOL
+    name: Solana
+    color: "#14b8a6"
+    alerts:
+      move_pct_24h: 8
+
+vs_currency: usd
+
+storage:
+  history_csv: data/prices.csv     # formato largo: timestamp, asset, price
+  alert_state: data/alert_state.json
+  backfill_days: 90                # en el primer run se descarga histórico
+
+dashboard:
+  data_json: docs/data.json
+  ma_windows: [24, 168]            # en horas: 1 día y 7 días
+
+# Telegram: NO pongas tokens aquí. Usa variables de entorno / GitHub Secrets:
+#   TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
+alerts:
+  enabled: true
+  cooldown_hours: 6                # no repetir la misma alerta antes de X horas

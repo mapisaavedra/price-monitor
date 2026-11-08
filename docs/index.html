@@ -1,33 +1,246 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Dashboard de precios</title>
-
-  <!-- Redirección inmediata a dashboard.html -->
-  <meta http-equiv="refresh" content="0; url=dashboard.html">
-
-  <!-- SEO opcional -->
-  <link rel="canonical" href="https://mapisaavedra.github.io/price-monitor/dashboard.html">
-  <meta name="robots" content="index,follow">
-
-  <style>
-    :root{color-scheme: dark light}
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-         background:#0f1220;color:#e8ecf5;margin:0;height:100vh;display:grid;place-items:center}
-    a{color:#60a5fa}
-    .card{max-width:720px;padding:16px;border-radius:12px;border:1px solid #26304a;background:#15192b}
-  </style>
-  <script>
-    // Redirección JS (por si el meta no corre)
-    window.location.replace("dashboard.html");
-  </script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Price Monitor · Dashboard cripto</title>
+<meta name="description" content="Monitor de precios cripto con histórico, métricas de riesgo y alertas, actualizado cada hora con GitHub Actions.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<style>
+:root{
+  --bg:#0b0d14; --panel:#12151f; --panel2:#171b27; --line:#232838;
+  --fg:#e7eaf2; --muted:#8a91a6; --up:#22c55e; --down:#ef4444; --accent:#818cf8;
+  --radius:14px; --mono:'JetBrains Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme: light){:root{
+  --bg:#f6f7fb; --panel:#fff; --panel2:#f1f3f8; --line:#e3e6ee;
+  --fg:#141824; --muted:#5f677c; --up:#16a34a; --down:#dc2626; --accent:#4f46e5;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 16px 48px}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:24px}
+h1{font-size:1.6rem;margin:0;letter-spacing:-.02em}
+h1 span{color:var(--accent)}
+.sub{color:var(--muted);font-size:.9rem;margin-top:4px}
+.live{display:inline-flex;align-items:center;gap:8px;font-size:.82rem;color:var(--muted);
+  background:var(--panel);border:1px solid var(--line);padding:6px 12px;border-radius:999px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--up);box-shadow:0 0 0 0 var(--up);animation:pulse 2s infinite}
+.dot.stale{background:#f59e0b;animation:none}
+@keyframes pulse{70%{box-shadow:0 0 0 8px transparent}}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-bottom:14px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;cursor:pointer;
+  transition:border-color .15s, transform .15s;position:relative;overflow:hidden}
+.kpi:hover{transform:translateY(-2px)}
+.kpi.active{border-color:var(--c)}
+.kpi::before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:var(--c)}
+.kpi .top{display:flex;justify-content:space-between;align-items:center}
+.sym{font-weight:700}.nm{color:var(--muted);font-size:.85rem;margin-left:6px}
+.price{font:600 1.5rem var(--mono);margin:6px 0 2px;letter-spacing:-.02em}
+.chg{display:flex;gap:12px;font:500 .82rem var(--mono)}
+.up{color:var(--up)}.down{color:var(--down)}.na{color:var(--muted)}
+.spark{height:44px;margin-top:8px}
+.grid{display:grid;grid-template-columns:2fr 1fr;gap:14px}
+@media(max-width:860px){.grid{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:14px;min-width:0}
+.card h2{font-size:.95rem;margin:0;font-weight:600}
+.card .hd{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.seg{display:inline-flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:3px}
+.seg button{all:unset;cursor:pointer;padding:4px 10px;border-radius:7px;font-size:.8rem;color:var(--muted)}
+.seg button.on{background:var(--panel);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.chart{height:380px}.chart.sm{height:280px}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+th,td{padding:8px 6px;text-align:right;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--muted);font-weight:500;font-size:.78rem}
+td{font-family:var(--mono);white-space:nowrap}
+.alerts{list-style:none;margin:0;padding:0;max-height:280px;overflow:auto}
+.alerts li{padding:10px 0;border-bottom:1px solid var(--line);font-size:.86rem}
+.alerts time{display:block;color:var(--muted);font-size:.75rem;font-family:var(--mono)}
+.empty{color:var(--muted);font-size:.88rem;padding:20px 0;text-align:center}
+.scroll{overflow-x:auto}
+footer{color:var(--muted);font-size:.8rem;margin-top:24px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+footer a{color:var(--accent)}
+#state{padding:60px 0;text-align:center;color:var(--muted)}
+</style>
 </head>
 <body>
-  <div class="card">
-    Redirigiendo al <a href="dashboard.html">dashboard interactivo</a>…
-  </div>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Price <span>Monitor</span></h1>
+      <div class="sub">Precios cripto · histórico horario · métricas de riesgo · alertas</div>
+    </div>
+    <div class="live"><i class="dot" id="dot"></i><span id="updated">Cargando…</span></div>
+  </header>
+
+  <div id="state">Cargando datos…</div>
+  <main id="app" hidden>
+    <section class="kpis" id="kpis"></section>
+
+    <div class="card">
+      <div class="hd">
+        <h2 id="main-title">Precio</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <div class="seg" id="range"></div>
+          <div class="seg" id="mode"><button data-v="price" class="on">Precio</button><button data-v="perf">Rendimiento %</button></div>
+        </div>
+      </div>
+      <div class="chart" id="main"></div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="hd"><h2>Métricas de riesgo</h2></div>
+        <div class="scroll"><table id="metrics"></table></div>
+      </div>
+      <div class="card">
+        <div class="hd"><h2>Correlación de retornos</h2></div>
+        <div class="chart sm" id="corr"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="hd"><h2>Alertas recientes</h2></div>
+      <ul class="alerts" id="alerts"></ul>
+    </div>
+  </main>
+
+  <footer>
+    <span>Datos: CoinGecko · Actualización automática cada hora con GitHub Actions</span>
+    <a href="https://github.com/mapisaavedra/price-monitor">Código en GitHub →</a>
+  </footer>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const fmtUSD = v => v == null ? '—' : '$' + v.toLocaleString('en-US', {maximumFractionDigits: v < 10 ? 4 : 2});
+const fmtPct = v => v == null ? '—' : (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
+const cls = v => v == null ? 'na' : v >= 0 ? 'up' : 'down';
+const RANGES = {'24h':1,'7d':7,'30d':30,'90d':90,'Todo':null};
+let D, sel, range = '30d', mode = 'price';
+
+function layout(extra = {}) {
+  return Object.assign({
+    paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)',
+    font:{family:'Inter', color:css('--muted'), size:12},
+    margin:{l:56,r:16,t:8,b:36}, hovermode:'x unified',
+    xaxis:{gridcolor:css('--line'), linecolor:css('--line')},
+    yaxis:{gridcolor:css('--line'), zeroline:false},
+    legend:{orientation:'h', y:1.08, x:0},
+    hoverlabel:{bgcolor:css('--panel2'), bordercolor:css('--line'), font:{color:css('--fg'), family:'JetBrains Mono, ui-monospace, monospace'}},
+  }, extra);
+}
+const cfg = {displayModeBar:false, responsive:true};
+
+function cut(series) {
+  const days = RANGES[range];
+  if (!days) return series.t.map((_, i) => i);
+  const end = new Date(series.t[series.t.length-1]).getTime() - days*864e5;
+  return series.t.map((t, i) => i).filter(i => new Date(series.t[i]).getTime() >= end);
+}
+
+function renderKPIs() {
+  $('#kpis').innerHTML = D.assets.map(a => {
+    const m = D.summary[a.symbol];
+    return `<div class="kpi ${a.symbol===sel?'active':''}" style="--c:${a.color}" data-s="${a.symbol}">
+      <div class="top"><div><span class="sym">${a.symbol}</span><span class="nm">${a.name}</span></div></div>
+      <div class="price">${fmtUSD(m.price)}</div>
+      <div class="chg"><span class="${cls(m.change_24h)}">24h ${fmtPct(m.change_24h)}</span>
+        <span class="${cls(m.change_7d)}">7d ${fmtPct(m.change_7d)}</span></div>
+      <div class="spark" id="sp-${a.symbol}"></div></div>`;
+  }).join('');
+  D.assets.forEach(a => {
+    const s = D.series[a.symbol], n = Math.min(s.p.length, 168);
+    Plotly.newPlot('sp-'+a.symbol, [{x:s.t.slice(-n), y:s.p.slice(-n), mode:'lines',
+      line:{color:a.color, width:1.6}, fill:'tozeroy', fillcolor:a.color+'18', hoverinfo:'skip'}],
+      {paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)', margin:{l:0,r:0,t:0,b:0},
+       xaxis:{visible:false}, yaxis:{visible:false, range:[Math.min(...s.p.slice(-n))*0.995, Math.max(...s.p.slice(-n))*1.005]},
+       showlegend:false}, {staticPlot:true, responsive:true});
+  });
+  document.querySelectorAll('.kpi').forEach(el => el.onclick = () => {
+    sel = el.dataset.s; mode = 'price'; syncSeg('#mode', mode); renderKPIs(); renderMain();
+  });
+}
+
+function renderMain() {
+  let traces = [];
+  if (mode === 'price') {
+    const a = D.assets.find(x => x.symbol === sel), s = D.series[sel], idx = cut(s);
+    $('#main-title').textContent = `${a.name} (${a.symbol}) · USD`;
+    traces.push({x:idx.map(i=>s.t[i]), y:idx.map(i=>s.p[i]), name:a.symbol, mode:'lines',
+      line:{color:a.color, width:2}, hovertemplate:'%{y:$,.2f}<extra>'+a.symbol+'</extra>'});
+    const dashes = ['dot','dash'];
+    D.ma_windows.forEach((w, k) => traces.push({x:idx.map(i=>s.t[i]), y:idx.map(i=>s.ma[w][i]),
+      name:`MA ${w>=24? (w/24)+'d' : w+'h'}`, mode:'lines',
+      line:{color:css('--muted'), width:1.2, dash:dashes[k%2]}, hovertemplate:'%{y:$,.2f}<extra>MA</extra>'}));
+    const al = a.alerts, shapes = [];
+    for (const [k, c] of [['above', css('--up')], ['below', css('--down')]]) if (al[k] != null)
+      shapes.push({type:'line', xref:'paper', x0:0, x1:1, y0:al[k], y1:al[k], line:{color:c, width:1, dash:'dot'}});
+    Plotly.react('main', traces, layout({shapes, yaxis:{gridcolor:css('--line'), tickprefix:'$', separatethousands:true}}), cfg);
+  } else {
+    $('#main-title').textContent = 'Rendimiento comparado (%)';
+    D.assets.forEach(a => {
+      const s = D.series[a.symbol], idx = cut(s), base = s.p[idx[0]];
+      traces.push({x:idx.map(i=>s.t[i]), y:idx.map(i=>(s.p[i]/base-1)*100), name:a.symbol, mode:'lines',
+        line:{color:a.color, width:2}, hovertemplate:'%{y:+.2f}%<extra>'+a.symbol+'</extra>'});
+    });
+    Plotly.react('main', traces, layout({yaxis:{gridcolor:css('--line'), ticksuffix:'%', zeroline:true, zerolinecolor:css('--line')}}), cfg);
+  }
+}
+
+function renderMetrics() {
+  const rows = D.assets.map(a => { const m = D.summary[a.symbol];
+    return `<tr><td><b style="color:${a.color}">●</b> ${a.symbol}</td>
+      <td class="${cls(m.change_30d)}">${fmtPct(m.change_30d)}</td>
+      <td>${fmtUSD(m.high_30d)}</td><td>${fmtUSD(m.low_30d)}</td>
+      <td>${m.volatility_30d==null?'—':m.volatility_30d.toFixed(1)+'%'}</td>
+      <td class="down">${fmtPct(m.max_drawdown)}</td></tr>`; }).join('');
+  $('#metrics').innerHTML = `<thead><tr><th>Activo</th><th>30d</th><th>Máx 30d</th><th>Mín 30d</th>
+    <th title="Desviación estándar de retornos horarios, anualizada">Volatilidad</th><th title="Mayor caída desde un máximo en todo el histórico">Máx caída</th></tr></thead><tbody>${rows}</tbody>`;
+}
+
+function renderCorr() {
+  const c = D.correlation;
+  if (!c.matrix.length) { $('#corr').innerHTML = '<div class="empty">Se necesitan más datos</div>'; return; }
+  Plotly.newPlot('corr', [{z:c.matrix, x:c.assets, y:c.assets, type:'heatmap', zmin:-1, zmax:1,
+    colorscale:[[0,css('--down')],[.5,css('--panel2')],[1,css('--accent')]], showscale:false,
+    text:c.matrix.map(r=>r.map(v=>v.toFixed(2))), texttemplate:'%{text}', textfont:{family:'JetBrains Mono, ui-monospace, monospace', color:css('--fg')},
+    hovertemplate:'%{y} / %{x}: %{z:.2f}<extra></extra>'}],
+    layout({margin:{l:44,r:8,t:8,b:30}, xaxis:{}, yaxis:{autorange:'reversed'}}), cfg);
+}
+
+function renderAlerts() {
+  $('#alerts').innerHTML = D.alerts.length
+    ? D.alerts.map(a => `<li><time>${new Date(a.at).toLocaleString('es-PE')}</time>${a.message}</li>`).join('')
+    : '<li class="empty">Sin alertas disparadas todavía</li>';
+}
+
+function syncSeg(id, v) { document.querySelectorAll(id+' button').forEach(b => b.classList.toggle('on', b.dataset.v === v)); }
+
+async function init() {
+  try {
+    const r = await fetch('data.json?_=' + Date.now());
+    if (!r.ok) throw new Error(r.status);
+    D = await r.json();
+  } catch (e) {
+    $('#state').textContent = 'Aún no hay datos. El primer run de GitHub Actions generará data.json.';
+    return;
+  }
+  const gen = new Date(D.generated), ageMin = (Date.now() - gen) / 6e4;
+  $('#updated').textContent = 'Actualizado ' + gen.toLocaleString('es-PE', {dateStyle:'medium', timeStyle:'short'});
+  if (ageMin > 180) $('#dot').classList.add('stale');
+  sel = D.assets[0].symbol;
+  $('#range').innerHTML = Object.keys(RANGES).map(k => `<button data-v="${k}" class="${k===range?'on':''}">${k}</button>`).join('');
+  $('#range').onclick = e => { if (e.target.dataset.v) { range = e.target.dataset.v; syncSeg('#range', range); renderMain(); } };
+  $('#mode').onclick = e => { if (e.target.dataset.v) { mode = e.target.dataset.v; syncSeg('#mode', mode); renderMain(); } };
+  $('#state').hidden = true; $('#app').hidden = false;
+  renderKPIs(); renderMain(); renderMetrics(); renderCorr(); renderAlerts();
+}
+init();
+</script>
 </body>
 </html>
-
