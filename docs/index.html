@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Price Monitor · Dashboard cripto</title>
+<title>monitor de precios</title>
 <meta name="description" content="Monitor de precios cripto con histórico, métricas de riesgo, simulador y alertas, actualizado cada hora con GitHub Actions.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
@@ -32,8 +32,7 @@ body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 Inter,system-ui
   background-attachment:fixed}
 .wrap{max-width:1180px;margin:0 auto;padding:28px 16px 48px}
 header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:24px}
-h1{font-size:1.7rem;margin:0;letter-spacing:-.02em}
-h1 span{background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+h1{font:600 1.5rem var(--mono);margin:0;letter-spacing:-.03em}
 .sub{color:var(--muted);font-size:.9rem;margin-top:4px}
 .hdr-r{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .pill{display:inline-flex;align-items:center;gap:8px;font-size:.8rem;color:var(--muted);
@@ -105,8 +104,8 @@ kbd{font:500 .7rem var(--mono);border:1px solid var(--line);border-bottom-width:
 <div class="wrap">
   <header>
     <div>
-      <h1>Price <span>Monitor</span> ✨</h1>
-      <div class="sub">Precios cripto · histórico horario · métricas de riesgo · alertas</div>
+      <h1>monitor de precios</h1>
+      <div class="sub">BTC, ETH y SOL. Se actualiza solo cada hora.</div>
     </div>
     <div class="hdr-r">
       <span class="pill" title="Precio en vivo consultado desde tu navegador cada 60 s"><i class="dot" id="dot"></i><span id="updated">Cargando…</span></span>
