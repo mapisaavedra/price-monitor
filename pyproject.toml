@@ -13,6 +13,7 @@ line-length = 110
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B"]
