@@ -1,3 +1,13 @@
 {
-  "history": []
+  "history": [
+    {
+      "key": "BTC:move24h",
+      "asset": "BTC",
+      "message": "⚡ BTC -6.90% en 24h → $68,672.00",
+      "at": "2026-11-13T07:52:49Z"
+    }
+  ],
+  "last_sent": {
+    "BTC:move24h": "2026-11-13T07:52:49Z"
+  }
 }
