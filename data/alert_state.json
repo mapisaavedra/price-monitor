@@ -101,13 +101,31 @@
       "asset": "SOL",
       "message": "⚡ SOL -8.91% en 24h → $68.18",
       "at": "2026-11-20T20:04:40Z"
+    },
+    {
+      "key": "BTC:below",
+      "asset": "BTC",
+      "message": "🔻 BTC cayó bajo 60,000 → $57,836.00",
+      "at": "2026-11-21T09:41:05Z"
+    },
+    {
+      "key": "BTC:move24h",
+      "asset": "BTC",
+      "message": "⚡ BTC -6.84% en 24h → $57,836.00",
+      "at": "2026-11-21T09:41:05Z"
+    },
+    {
+      "key": "ETH:below",
+      "asset": "ETH",
+      "message": "🔻 ETH cayó bajo 1,800 → $1,633.94",
+      "at": "2026-11-21T09:41:05Z"
     }
   ],
   "last_sent": {
-    "BTC:move24h": "2026-11-20T20:04:40Z",
+    "BTC:move24h": "2026-11-21T09:41:05Z",
     "SOL:move24h": "2026-11-20T20:04:40Z",
-    "ETH:below": "2026-11-20T20:04:40Z",
+    "ETH:below": "2026-11-21T09:41:05Z",
     "ETH:move24h": "2026-11-20T20:04:40Z",
-    "BTC:below": "2026-11-20T20:04:40Z"
+    "BTC:below": "2026-11-21T09:41:05Z"
   }
 }
