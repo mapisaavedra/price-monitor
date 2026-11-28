@@ -269,13 +269,25 @@
       "asset": "ETH",
       "message": "🔻 ETH cayó bajo 1,800 → $1,662.56",
       "at": "2026-11-28T03:51:56Z"
+    },
+    {
+      "key": "BTC:below",
+      "asset": "BTC",
+      "message": "🔻 BTC cayó bajo 60,000 → $59,174.00",
+      "at": "2026-11-28T12:54:23Z"
+    },
+    {
+      "key": "ETH:below",
+      "asset": "ETH",
+      "message": "🔻 ETH cayó bajo 1,800 → $1,646.11",
+      "at": "2026-11-28T12:54:23Z"
     }
   ],
   "last_sent": {
     "BTC:move24h": "2026-11-22T15:14:57Z",
     "SOL:move24h": "2026-11-20T20:04:40Z",
-    "ETH:below": "2026-11-28T03:51:56Z",
+    "ETH:below": "2026-11-28T12:54:23Z",
     "ETH:move24h": "2026-11-20T20:04:40Z",
-    "BTC:below": "2026-11-28T03:51:56Z"
+    "BTC:below": "2026-11-28T12:54:23Z"
   }
 }
